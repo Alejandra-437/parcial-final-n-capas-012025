@@ -1,4 +1,5 @@
 package com.uca.parcialfinalncapas.filters;
+import com.uca.parcialfinalncapas.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,13 +28,11 @@ public class TokenFilter extends OncePerRequestFilter {
             if (JwtUtil.isTokenValid(token)) {
                 Claims claims = JwtUtil.extractAllClaims(token);
                 String username = claims.getSubject();
-                String role = claims.get("rol", String.class); // Asegúrate de incluir este claim al generar el token
+                String role = claims.get("rol", String.class);
 
-                // Autoridad con prefijo "ROLE_"
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
                 Authentication auth = new UsernamePasswordAuthenticationToken(username, null, Collections.singletonList(authority));
 
-                // Establecer el contexto de seguridad
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }

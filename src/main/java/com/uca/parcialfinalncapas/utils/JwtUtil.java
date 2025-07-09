@@ -10,8 +10,7 @@ import java.util.Date;
 import java.util.Map;
 
 public class JwtUtil {
-    // Se recomienda extraer la clave desde las propiedades de aplicación.
-    private static final String SECRET_KEY = "claveSuperSecretaMuyLargaQueDebeSerMuySegura";
+    private static final String SECRET_KEY = "claveSuperSecretaMuyLargaQueDebeSerMuySeguraEsoDiceElSenior";
     private static final long EXPIRATION_MS = 600000;
 
     private static Key getSigningKey() {
@@ -37,7 +36,7 @@ public class JwtUtil {
 
     public static String extractUsername(String token) {
         Claims claims = extractAllClaims(token);
-        return claims.getSubject(); // Suponiendo que el "subject" almacena el identificador del usuario
+        return claims.getSubject();
     }
     public static String generateToken(String subject, Map<String, Object> extraClaims) {
         return Jwts.builder()
@@ -48,5 +47,4 @@ public class JwtUtil {
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
-    // Puedes agregar más métodos para extraer otros datos como roles, expiración, etc.
 }

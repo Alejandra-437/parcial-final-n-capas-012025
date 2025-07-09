@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,6 +23,7 @@ public class TicketController {
     private TicketService ticketService;
 
     @GetMapping
+    @PreAuthorize("hasRole('TECH')")
     public ResponseEntity<GeneralResponse> getAllTickets() {
         return ResponseBuilderUtil.buildResponse("Tickets obtenidos correctamente",
                 ticketService.getAllTickets().isEmpty() ? HttpStatus.BAD_REQUEST : HttpStatus.OK,
@@ -28,27 +31,43 @@ public class TicketController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'TECH')")
     public ResponseEntity<GeneralResponse> getTicketById(@PathVariable Long id) {
         TicketResponse ticket = ticketService.getTicketById(id);
         if (ticket == null) {
             throw new BadTicketRequestException("Ticket no encontrado");
         }
-        return ResponseBuilderUtil.buildResponse("Ticket found", HttpStatus.OK, ticket);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isUser = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("USER"));
+
+        if (isUser) {
+            Long userId = Long.parseLong(auth.getName());
+            if (!ticket.getUsuarioId().equals(userId)) {
+                throw new BadTicketRequestException("No tienes permiso para ver este ticket");
+            }
+        }
+
+        return ResponseBuilderUtil.buildResponse("Ticket encontrado", HttpStatus.OK, ticket);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<GeneralResponse> createTicket(@Valid @RequestBody TicketCreateRequest ticket) {
         TicketResponse createdTicket = ticketService.createTicket(ticket);
         return ResponseBuilderUtil.buildResponse("Ticket creado correctamente", HttpStatus.CREATED, createdTicket);
     }
 
     @PutMapping
+    @PreAuthorize("hasRole('TECH')")
     public ResponseEntity<GeneralResponse> updateTicket(@Valid @RequestBody TicketUpdateRequest ticket) {
         TicketResponse updatedTicket = ticketService.updateTicket(ticket);
         return ResponseBuilderUtil.buildResponse("Ticket actualizado correctamente", HttpStatus.OK, updatedTicket);
     }
 
     @DeleteMapping("/{id}")
+
+    @PreAuthorize("hasRole('TECH')")
     public ResponseEntity<GeneralResponse> deleteTicket(@PathVariable Long id) {
         ticketService.deleteTicket(id);
         return ResponseBuilderUtil.buildResponse("Ticket eliminado correctamente", HttpStatus.OK, null);
